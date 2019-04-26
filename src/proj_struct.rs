@@ -16,6 +16,25 @@ pub struct MkdirCommand {
     pub path: String,
 }
 
+impl MkdirCommand {
+    pub fn new(path_str: &str) -> Self {
+        let as_path = Path::new(path_str);
+        match as_path.strip_prefix("/") {
+            Ok(relative_path) => match relative_path.to_str() {
+                Some(r) => MkdirCommand {
+                    path: String::from(r),
+                },
+                None => MkdirCommand {
+                    path: String::from(path_str),
+                },
+            },
+            Err(_) => MkdirCommand {
+                path: String::from(path_str),
+            },
+        }
+    }
+}
+
 impl Command for MkdirCommand {
     fn execute(&self) {
         println!("mkdir -p {}", self.path);
@@ -57,11 +76,7 @@ pub fn parse(input_string: String) -> Vec<Box<dyn Command>> {
 
     for line in lines {
         if is_dir(line) {
-            output.push(Box::new(
-                MkdirCommand {
-                    path: String::from(line)
-                }
-            ));
+            output.push(Box::new(MkdirCommand::new(line)));
         } else if !line.is_empty() {
             let folder = Path::new(line);
 
@@ -69,22 +84,16 @@ pub fn parse(input_string: String) -> Vec<Box<dyn Command>> {
                 Some(base) => {
                     let base_str = base.to_str().unwrap();
                     if !base_str.is_empty() {
-                        output.push(Box::new(
-                            MkdirCommand {
-                                path: String::from(base_str)
-                            }
-                        ))
+                        output.push(Box::new(MkdirCommand::new(base_str)))
                     }
-                },
-                None => ()
+                }
+                None => (),
             }
 
-            output.push(Box::new(
-                TouchCommand {
-                    path: String::from(line),
-                    contents: String::from(""),
-                }
-            ));
+            output.push(Box::new(TouchCommand {
+                path: String::from(line),
+                contents: String::from(""),
+            }));
         }
     }
 
@@ -98,7 +107,10 @@ mod tests {
     #[test]
     fn test_parse() {
         let commands = parse("/a/path/with/multiple/directories/".to_string());
-        assert_eq!(&commands[0].to_string(), "mkdir -p /a/path/with/multiple/directories/");
+        assert_eq!(
+            &commands[0].to_string(),
+            "mkdir -p a/path/with/multiple/directories"
+        );
     }
 
     #[test]
@@ -113,9 +125,17 @@ mod tests {
 
     #[test]
     fn test_parsing_empty_lines_between_two_non_empty_lines_is_ignored() {
-        let commands = parse(String::from("/a/valid/directory/before/empty/line/
+        let commands = parse(String::from(
+            "/a/valid/directory/before/empty/line/
 
-/a/valid/directory/after/empty/line/"));
+/a/valid/directory/after/empty/line/",
+        ));
         assert_eq!(commands.len(), 2);
+    }
+
+    #[test]
+    fn test_parsing_absolute_folder_paths_are_converted_to_relative_paths() {
+        let commands = parse(String::from("/an/absolute/directory/"));
+        assert_eq!(commands[0].to_string(), "mkdir -p an/absolute/directory");
     }
 }
