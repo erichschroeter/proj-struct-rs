@@ -1,3 +1,4 @@
+use std::fs;
 use docopt::Docopt;
 use serde::Deserialize;
 
@@ -27,15 +28,20 @@ Options:
 #[derive(Debug, Deserialize)]
 struct Args {
     flag_pretend: bool,
+    arg_input_file: Option<String>,
 }
 
 fn main() {
     let args: Args = Docopt::new(USAGE)
         .and_then(|d| d.deserialize())
         .unwrap_or_else(|e| e.exit());
-    println!("{:?}", args);
-    let commands = proj_struct::parse("/a/path/with/multiple/directories/".to_string());
-    for cmd in commands {
-        println!("would have executed: {}", cmd.args[0]);
+    match fs::read_to_string(args.arg_input_file.unwrap()) {
+      Ok(input_file_text) => {
+        let commands = proj_struct::parse(input_file_text);
+        for cmd in commands {
+            println!("would have executed: {}", cmd.args[0]);
+        }
+      },
+      Err(e) => eprintln!("{}", e)
     }
 }
