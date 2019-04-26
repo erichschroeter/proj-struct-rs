@@ -62,7 +62,7 @@ pub fn parse(input_string: String) -> Vec<Box<dyn Command>> {
                     path: String::from(line)
                 }
             ));
-        } else {
+        } else if !line.is_empty() {
             let folder = Path::new(line);
 
             match folder.parent() {
@@ -109,5 +109,13 @@ mod tests {
     #[test]
     fn test_is_dir_returns_true_for_valid_directory() {
         assert!(is_dir("example/folder/"));
+    }
+
+    #[test]
+    fn test_parsing_empty_lines_between_two_non_empty_lines_is_ignored() {
+        let commands = parse(String::from("/a/valid/directory/before/empty/line/
+
+/a/valid/directory/after/empty/line/"));
+        assert_eq!(commands.len(), 2);
     }
 }
