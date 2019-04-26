@@ -38,8 +38,14 @@ fn main() {
     match fs::read_to_string(args.arg_input_file.unwrap()) {
       Ok(input_file_text) => {
         let commands = proj_struct::parse(input_file_text);
-        for cmd in commands {
-            println!("would have executed: {}", cmd.args[0]);
+        if args.flag_pretend {
+          for cmd in commands {
+              println!("would have executed: {}", cmd);
+          }
+        } else {
+          for cmd in commands {
+              cmd.execute();
+          }
         }
       },
       Err(e) => eprintln!("{}", e)

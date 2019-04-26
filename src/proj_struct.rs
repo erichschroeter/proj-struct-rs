@@ -1,15 +1,43 @@
-#[derive(Debug)]
-pub struct Command {
-    pub args: Vec<String>,
+
+pub trait Command {
+    fn execute(&self);
+    fn to_string(&self) -> String;
 }
 
-impl Command {
-    pub fn new() -> Self {
-        Command { args: Vec::new() }
+impl std::fmt::Display for Command {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.to_string())
+    }
+}
+
+#[derive(Debug)]
+pub struct MkdirCommand {
+    pub path: String,
+}
+
+impl Command for MkdirCommand {
+    fn execute(&self) {
+        println!("mkdir -p {}", self.path);
     }
 
-    pub fn add_arg(&mut self, arg: &str) {
-        self.args.push(arg.to_string());
+    fn to_string(&self) -> String {
+        format!("mkdir -p {}", self.path)
+    }
+}
+
+#[derive(Debug)]
+pub struct TouchCommand {
+    pub path: String,
+    pub contents: String,
+}
+
+impl Command for TouchCommand {
+    fn execute(&self) {
+        println!("touch {}", self.path);
+    }
+
+    fn to_string(&self) -> String {
+        format!("touch {}", self.path)
     }
 }
 
@@ -22,15 +50,25 @@ pub fn is_dir(path: &str) -> bool {
     false
 }
 
-pub fn parse(input_string: String) -> Vec<Command> {
-    let mut output: Vec<Command> = vec![];
+pub fn parse(input_string: String) -> Vec<Box<dyn Command>> {
+    let mut output: Vec<Box<dyn Command>> = vec![];
     let lines = input_string.split("\n");
 
     for line in lines {
-        let mut cmd = Command::new();
-        cmd.add_arg(line);
-        output.push(cmd);
-        println!("{}", line);
+        if is_dir(line) {
+            output.push(Box::new(
+                MkdirCommand {
+                    path: String::from(line)
+                }
+            ));
+        } else {
+            output.push(Box::new(
+                TouchCommand {
+                    path: String::from(line),
+                    contents: String::from(""),
+                }
+            ));
+        }
     }
 
     output
@@ -43,7 +81,7 @@ mod tests {
     #[test]
     fn test_parse() {
         let commands = parse("/a/path/with/multiple/directories/".to_string());
-        assert_eq!(&commands[0].args[0], "/a/path/with/multiple/directories/");
+        assert_eq!(&commands[0].to_string(), "mkdir -p /a/path/with/multiple/directories/");
     }
 
     #[test]
