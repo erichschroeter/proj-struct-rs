@@ -1,3 +1,4 @@
+use std::path::Path;
 
 pub trait Command {
     fn execute(&self);
@@ -62,6 +63,22 @@ pub fn parse(input_string: String) -> Vec<Box<dyn Command>> {
                 }
             ));
         } else {
+            let folder = Path::new(line);
+
+            match folder.parent() {
+                Some(base) => {
+                    let base_str = base.to_str().unwrap();
+                    if !base_str.is_empty() {
+                        output.push(Box::new(
+                            MkdirCommand {
+                                path: String::from(base_str)
+                            }
+                        ))
+                    }
+                },
+                None => ()
+            }
+
             output.push(Box::new(
                 TouchCommand {
                     path: String::from(line),
