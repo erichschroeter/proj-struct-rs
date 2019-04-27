@@ -1,3 +1,4 @@
+use std::fs::create_dir_all;
 use std::path::Path;
 
 pub trait Command {
@@ -37,7 +38,10 @@ impl MkdirCommand {
 
 impl Command for MkdirCommand {
     fn execute(&self) {
-        println!("mkdir -p {}", self.path);
+        match create_dir_all(Path::new(&self.path)) {
+            Ok(_) => (),
+            Err(_) => (),
+        }
     }
 
     fn to_string(&self) -> String {
