@@ -1,4 +1,4 @@
-use std::fs::create_dir_all;
+use std::fs::{File, create_dir_all};
 use std::path::Path;
 
 pub trait Command {
@@ -57,7 +57,10 @@ pub struct TouchCommand {
 
 impl Command for TouchCommand {
     fn execute(&self) {
-        println!("touch {}", self.path);
+        match File::create(&self.path) {
+            Ok(_) => (),
+            Err(_) => (),
+        }
     }
 
     fn to_string(&self) -> String {
