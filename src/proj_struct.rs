@@ -82,10 +82,11 @@ pub fn parse(input_string: String) -> Vec<Box<dyn Command>> {
     let lines = input_string.split("\n");
 
     for line in lines {
-        if is_dir(line) {
-            output.push(Box::new(MkdirCommand::new(line)));
-        } else if !line.is_empty() {
-            let folder = Path::new(line);
+        let trimmed_line = line.trim();
+        if is_dir(trimmed_line) {
+            output.push(Box::new(MkdirCommand::new(trimmed_line)));
+        } else if !trimmed_line.is_empty() {
+            let folder = Path::new(trimmed_line);
 
             match folder.parent() {
                 Some(base) => {
@@ -98,7 +99,7 @@ pub fn parse(input_string: String) -> Vec<Box<dyn Command>> {
             }
 
             output.push(Box::new(TouchCommand {
-                path: String::from(line),
+                path: String::from(trimmed_line),
                 contents: String::from(""),
             }));
         }
@@ -143,6 +144,18 @@ mod tests {
     #[test]
     fn test_parsing_absolute_folder_paths_are_converted_to_relative_paths() {
         let commands = parse(String::from("/an/absolute/directory/"));
+        assert_eq!(commands[0].to_string(), "mkdir -p an/absolute/directory");
+    }
+
+    #[test]
+    fn test_parsing_ignores_prefixed_whitespace_with_spaces() {
+        let commands = parse(String::from(" /an/absolute/directory/"));
+        assert_eq!(commands[0].to_string(), "mkdir -p an/absolute/directory");
+    }
+
+    #[test]
+    fn test_parsing_ignores_prefixed_whitespace_with_tabs() {
+        let commands = parse(String::from("\t/an/absolute/directory/"));
         assert_eq!(commands[0].to_string(), "mkdir -p an/absolute/directory");
     }
 }
